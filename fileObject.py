@@ -1,18 +1,77 @@
+import sys
+import traceback
+
 from PyQt5 import QtWidgets, uic, QtGui, QtCore
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThreadPool, QRunnable, pyqtSlot, QObject, pyqtSignal
 import json
 import os
+import classification
+import reduction
+import data
+
+from PyQt5 import QtCore, QtWidgets, uic
+import matplotlib
+matplotlib.use('QT5Agg')
+
+import matplotlib.pylab as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+
+class WorkerSignals(QObject):
+    '''
+    Defines the signals available from a running worker thread.
+
+    Supported signals are:
+
+    finished
+        No data
+
+    error
+        tuple (exctype, value, traceback.format_exc() )
+
+    result
+        object data returned from processing, anything
+
+    '''
+    finished = pyqtSignal()
+    error = pyqtSignal(tuple)
+    result = pyqtSignal(object)
+
+class Worker(QRunnable):
+
+    def __init__(self, fn, *args, **kwargs):
+        super(Worker, self).__init__()
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+    @pyqtSlot()
+    def run(self):
+        # Retrieve args/kwargs here; and fire processing using them
+        try:
+            result = self.fn(
+                *self.args, **self.kwargs
+            )
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(result)  # Return the result of the processing
+        finally:
+            self.signals.finished.emit()  # Done
 
 class FileObject:
     def __init__(self, csv, name, form):
         self.name = name
         self.csv = csv
         self.form = form
-
+        self.threadpool = QThreadPool()
         self.classifier = None
-
         self.disabled = []
         self.enumerate = []
+        self.tabIndex = 0
 
         self.classifierBoxes = []
         self.disabledBoxes = []
@@ -31,8 +90,93 @@ class FileObject:
 
         self.setupHeader()
 
+        self.progressBar = QtWidgets.QProgressBar(self.form.groupBox)
+        self.progressBar.setMaximumSize(QtCore.QSize(16777215, 10))
+        self.progressBar.setProperty("value", 0)
+        self.progressBar.setTextVisible(False)
+        self.progressBar.setInvertedAppearance(False)
+        self.progressBar.setObjectName("progressBar")
+        self.progressBar.hide()
+        self.form.gridLayout_5.addWidget(self.progressBar, 8, 0, 1, 1)
+
 
         self.form.gridLayout_3.addWidget(self.table, 0, 0, 1, 1)
+
+    def executeReductionInThread(self):
+         worker = Worker(self.executeReduction)
+
+         worker.signals.finished.connect(self.loadGraphs)
+
+         self.threadpool.start(worker)
+
+        #self.executeReduction()
+
+    def loadGraphs(self):
+
+        widgets = self.do.createGraph()
+
+        plotWidget = widgets[0]
+
+        lay = QtWidgets.QVBoxLayout(self.form.content_plot)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.addWidget(plotWidget)
+        lay.addWidget(NavigationToolbar(plotWidget, self.form))
+        plotWidget.show()
+
+    def executeReduction(self):
+
+        csv = self.csv.copy(deep=True)
+
+        if self.enumAll:
+            csv = data.enumerate_all(csv)
+        elif len(self.enumerate) > 0:
+            csv = data.enumerate_data(csv, self.enumerate)
+
+        for columnIndex in self.disabled:
+            del csv[csv.columns[columnIndex]]
+
+
+        self.do = data.DataObject(self.name, csv, self.classifier)
+
+        self.do.xTrainingData,  self.do.xTestData,  self.do.yTrainingData,  self.do.yTestData = reduction.prepareData( self.do.x,  self.do.y)
+        for classifier in classification.classificationAlgorithms:
+            temp_score, elapsedTime = classifier.execute( self.do.xTrainingData,  self.do.xTestData,
+                                                          self.do.yTrainingData,
+                                                          self.do.yTestData)
+            self.do.addClassifierScore(classifier.name, temp_score, elapsedTime)
+
+        totalIterations =  self.do.maxDimensionalReduction * len(reduction.reductionAlgorithms) * len(classification.classificationAlgorithms)
+        iterationCount = 0
+        self.progressBar.setValue(0)
+
+        for method in reduction.reductionAlgorithms:
+
+            dataset =  self.do.newReducedDataSet(method.name)
+            for dimension in range( self.do.maxDimensionalReduction, 0, -1):
+
+                if method.capByClasses and dimension >  self.do.classes - 1:
+                    reducedData = dataset.addReducedData([], [], [], dimension, 0)
+                    for classifier in classification.classificationAlgorithms:
+                        reducedData.addClassifierScore(classifier.name, 0, 0)
+                        iterationCount+=1
+                        self.progressBar.setValue((iterationCount / totalIterations) * 100)
+
+                    continue
+
+                reducedData = method.execute(dimension,  self.do.x,  self.do.y, dataset)
+
+                for classifier in classification.classificationAlgorithms:
+                    temp_score, elapsedTime = classifier.execute(reducedData.xTrainingData, reducedData.xTestData,
+                                                                 dataset.yTrainingData,
+                                                                 dataset.yTestData)
+                    reducedData.addClassifierScore(classifier.name, temp_score, elapsedTime)
+                    iterationCount += 1
+                    self.progressBar.setValue((iterationCount / totalIterations) * 100)
+
+                print('.', end='')
+            print("")
+        print(iterationCount, totalIterations)
+
 
     def clearSettings(self):
         self.setAllEnumerate(False)
@@ -57,7 +201,24 @@ class FileObject:
             box.setChecked(False)
         self.form.sender().setChecked(True)
         self.classifier = int(self.form.sender().objectName())
+        self.updateClassifierStats()
         print(self.classifier)
+
+    def updateClassifierStats(self):
+        if self.classifier is None:
+            return
+
+        self.classes = self.csv[self.csv.columns[self.classifier]].nunique()
+        self.form.classificationValue.setText(str(self.classes))
+
+    def updateDimensionStat(self):
+        self.dimensions = len(self.csv.columns) - (len(self.disabled))
+        self.form.dimensionValue.setText(str(self.dimensions))
+
+    def updateRowStat(self):
+        self.rows = len(self.csv.index)
+        self.form.rowValue.setText(str(self.rows))
+
 
     def setDisabled(self):
 
@@ -69,6 +230,7 @@ class FileObject:
             self.disabled.append(id)
 
         print(self.disabled)
+        self.updateDimensionStat()
 
     def setEnumerate(self):
         id = int(self.form.sender().objectName())

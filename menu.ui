@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1038</width>
-    <height>562</height>
+    <width>1064</width>
+    <height>565</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -63,39 +63,156 @@
              </property>
              <property name="minimumSize">
               <size>
-               <width>200</width>
+               <width>350</width>
                <height>0</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>370</width>
+               <height>16777215</height>
               </size>
              </property>
              <property name="title">
               <string>Data</string>
              </property>
-             <layout class="QFormLayout" name="formLayout">
-              <item row="0" column="0" colspan="2">
-               <widget class="QPushButton" name="enumerateAll">
-                <property name="text">
-                 <string>Toggle Enumerate All</string>
+             <layout class="QGridLayout" name="gridLayout_5">
+              <item row="4" column="0">
+               <layout class="QVBoxLayout" name="verticalLayout_2">
+                <item>
+                 <widget class="QLabel" name="label_5">
+                  <property name="text">
+                   <string>Stats:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout">
+                  <property name="leftMargin">
+                   <number>6</number>
+                  </property>
+                  <item>
+                   <layout class="QGridLayout" name="gridLayout_4">
+                    <item row="0" column="1">
+                     <widget class="QLabel" name="dimensionValue">
+                      <property name="text">
+                       <string>0</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="0">
+                     <widget class="QLabel" name="label">
+                      <property name="text">
+                       <string>Dimensions:</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                  <item>
+                   <layout class="QGridLayout" name="gridLayout_6">
+                    <property name="leftMargin">
+                     <number>4</number>
+                    </property>
+                    <item row="0" column="0">
+                     <widget class="QLabel" name="label_6">
+                      <property name="text">
+                       <string>Rows:</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="1">
+                     <widget class="QLabel" name="rowValue">
+                      <property name="text">
+                       <string>0</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                  <item>
+                   <layout class="QGridLayout" name="gridLayout_7">
+                    <item row="0" column="0">
+                     <widget class="QLabel" name="label_3">
+                      <property name="text">
+                       <string>Unique Classifications:</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="1">
+                     <widget class="QLabel" name="classificationValue">
+                      <property name="text">
+                       <string>0</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </item>
+              <item row="5" column="0">
+               <spacer name="verticalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="8" column="0">
+               <widget class="QProgressBar" name="placeHolderBar">
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>10</height>
+                 </size>
+                </property>
+                <property name="value">
+                 <number>0</number>
+                </property>
+                <property name="textVisible">
+                 <bool>false</bool>
                 </property>
                </widget>
               </item>
-              <item row="1" column="0" colspan="2">
+              <item row="1" column="0">
                <widget class="QPushButton" name="saveSettings">
                 <property name="text">
                  <string>Save Settings To File</string>
                 </property>
                </widget>
               </item>
-              <item row="2" column="0" colspan="2">
+              <item row="0" column="0">
+               <widget class="QPushButton" name="enumerateAll">
+                <property name="text">
+                 <string>Toggle Enumerate All</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
                <widget class="QPushButton" name="loadSettings">
                 <property name="text">
                  <string>Load Settings From File</string>
                 </property>
                </widget>
               </item>
-              <item row="3" column="0" colspan="2">
+              <item row="3" column="0">
                <widget class="QPushButton" name="resetSettings">
                 <property name="text">
                  <string>Reset Settings</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
+               <widget class="QPushButton" name="executeReduction">
+                <property name="text">
+                 <string>Execute Reduction Algorithms</string>
                 </property>
                </widget>
               </item>
@@ -108,6 +225,11 @@
           <attribute name="title">
            <string>Visualisation</string>
           </attribute>
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <item>
+            <widget class="QWidget" name="content_plot" native="true"/>
+           </item>
+          </layout>
          </widget>
         </widget>
        </item>
@@ -202,6 +324,7 @@
       <attribute name="title">
        <string>Reduction and Classifier Settings</string>
       </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_3"/>
      </widget>
     </widget>
    </item>

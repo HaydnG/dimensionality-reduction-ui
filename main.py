@@ -3,11 +3,19 @@ from PyQt5 import QtWidgets, uic, QtGui, QtCore
 import pandas as pd
 import numpy as np
 import glob
+
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.figure import Figure
+
 import fileObject
 import qdarkstyle
 import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QBrush, QColor
+import warnings
+warnings.filterwarnings("ignore")
+
+
 
 app = QtWidgets.QApplication([])
 
@@ -21,6 +29,8 @@ DataList = {}
 currentFile = None
 
 def selectData(file):
+    form.placeHolderBar.hide()
+
     global currentFile
 
 
@@ -30,13 +40,19 @@ def selectData(file):
 
     for item in DataList:
         DataList[item].table.hide()
+        DataList[item].progressBar.hide()
 
     form.groupBox.setTitle(file.name)
 
     currentFile = file
+    file.updateClassifierStats()
+    file.updateDimensionStat()
+    file.updateRowStat()
 
     form.tableWidget.hide()
     file.table.show()
+    file.progressBar.show()
+    form.tabWidget_2.setCurrentIndex(file.tabIndex)
 
 def addFile(csv, filename, showError):
     if filename in DataList:
@@ -132,6 +148,12 @@ def loadSettings():
         return
     currentFile.loadSettings()
 
+def executeReduction():
+    if currentFile is None:
+        return
+    currentFile.executeReductionInThread()
+    print("hi")
+
 def loadAllSettings():
     for filename in DataList:
         DataList[filename].loadSettings()
@@ -149,6 +171,13 @@ form.saveAllSettings.clicked.connect(saveAllSettings)
 form.loadAllSettings.clicked.connect(loadAllSettings)
 form.resetAllSettings.clicked.connect(resetAllSettings)
 form.resetSettings.clicked.connect(resetSettings)
+
+form.executeReduction.clicked.connect(executeReduction)
+
+def setTab():
+    currentFile.tabIndex = form.tabWidget_2.currentIndex()
+
+form.tabWidget_2.currentChanged.connect(setTab)
 
 
 
