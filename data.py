@@ -177,7 +177,7 @@ class DataObject:
 
         plt.figure(GraphCount)
 
-        widgetList = []
+        widgetList = {}
 
         for classifier in classification.classificationAlgorithms:
 
@@ -233,7 +233,7 @@ class DataObject:
             GraphCount += 1
 
             plotWidget = FigureCanvas(plt.gcf())
-            widgetList.append(plotWidget)
+            widgetList[classifier.name] = plotWidget
 
 
             plt.savefig('graphs/' + self.name + "_" + classifier.name + '.png', bbox_inches='tight')

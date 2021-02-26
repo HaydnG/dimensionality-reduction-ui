@@ -71,6 +71,8 @@ class FileObject:
         self.classifier = None
         self.disabled = []
         self.enumerate = []
+        self.graphWidgets = {}
+        self.graphToolBars = {}
         self.tabIndex = 0
 
         self.classifierBoxes = []
@@ -90,6 +92,12 @@ class FileObject:
 
         self.setupHeader()
 
+        self.graphList = QtWidgets.QListWidget(self.form.tab_4)
+        self.graphList.setMaximumSize(QtCore.QSize(150, 16777215))
+        self.graphList.setObjectName("graphList")
+        self.form.gridLayout_8.addWidget(self.graphList, 0, 0, 1, 1)
+        self.graphList.itemSelectionChanged.connect(self.selectionChanged)
+
         self.progressBar = QtWidgets.QProgressBar(self.form.groupBox)
         self.progressBar.setMaximumSize(QtCore.QSize(16777215, 10))
         self.progressBar.setProperty("value", 0)
@@ -102,6 +110,26 @@ class FileObject:
 
         self.form.gridLayout_3.addWidget(self.table, 0, 0, 1, 1)
 
+    def selectionChanged(self):
+        self.hideGraphs()
+        self.setGraphSelection()
+
+    def hideGraphs(self):
+        for graph in self.graphWidgets:
+            self.graphWidgets[graph].hide()
+            self.graphToolBars[graph].hide()
+
+    def setGraphSelection(self):
+        if len(self.graphList) <= 0:
+            return
+
+        selected = self.graphList.selectedItems()
+        if len(selected) <= 0:
+            return
+
+        self.graphWidgets[self.graphList.selectedItems()[0].text()].show()
+        self.graphToolBars[self.graphList.selectedItems()[0].text()].show()
+
     def executeReductionInThread(self):
          worker = Worker(self.executeReduction)
 
@@ -113,15 +141,28 @@ class FileObject:
 
     def loadGraphs(self):
 
-        widgets = self.do.createGraph()
+        self.graphWidgets = self.do.createGraph()
+        self.graphList.addItems([a.name for a in classification.classificationAlgorithms])
 
-        plotWidget = widgets[0]
 
-        lay = QtWidgets.QVBoxLayout(self.form.content_plot)
-        lay.setContentsMargins(0, 0, 0, 0)
-        lay.addWidget(plotWidget)
-        lay.addWidget(NavigationToolbar(plotWidget, None))
-        plotWidget.show()
+
+
+        last = None
+        for graph in self.graphWidgets:
+            self.graphWidgets[graph].hide()
+            self.form.graphLayout.addWidget(self.graphWidgets[graph])
+            toolbar = NavigationToolbar(self.graphWidgets[graph], None)
+            toolbar.hide()
+            self.graphToolBars[graph] = toolbar
+            self.form.graphLayout.addWidget(toolbar)
+            last = graph
+
+        if last is None:
+            return
+
+
+        self.graphWidgets[last].show()
+        self.graphToolBars[last].show()
 
     def executeReduction(self):
 

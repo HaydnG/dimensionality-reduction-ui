@@ -21,7 +21,7 @@ from PyQt5.QtGui import QBrush, QColor
 import warnings
 warnings.filterwarnings("ignore")
 
-
+currentTab = 0
 
 class AppWindow(QDialog):
     def __init__(self):
@@ -53,6 +53,8 @@ def selectData(file):
     for item in DataList:
         DataList[item].table.hide()
         DataList[item].progressBar.hide()
+        DataList[item].graphList.hide()
+        DataList[item].hideGraphs()
 
     app.form.groupBox.setTitle(file.name)
 
@@ -62,9 +64,16 @@ def selectData(file):
     file.updateRowStat()
 
     app.form.tableWidget.hide()
+    file.setGraphSelection()
     file.table.show()
     file.progressBar.show()
-    app.form.tabWidget_2.setCurrentIndex(file.tabIndex)
+    file.graphList.show()
+
+    # if len(file.graphWidgets) <= 0:
+    #     if currentTab =
+    #     app.form.tabWidget_2.setCurrentIndex(0)
+    # else:
+    #     app.form.tabWidget_2.setCurrentIndex(currentTab)
 
 def addFile(csv, filename, showError):
     if filename in DataList:
@@ -187,7 +196,13 @@ app.form.resetSettings.clicked.connect(resetSettings)
 app.form.executeReduction.clicked.connect(executeReduction)
 
 def setTab():
+    global currentTab
+    if currentFile is None:
+        return
+
     currentFile.tabIndex = app.form.tabWidget_2.currentIndex()
+
+    currentTab = currentFile.tabIndex
 
 app.form.tabWidget_2.currentChanged.connect(setTab)
 
@@ -209,6 +224,10 @@ def selectItem(item):
 
 
 app.form.listWidget.itemSelectionChanged.connect(selectionChanged)
+
+app.form.graphLayout = QtWidgets.QVBoxLayout(app.form.content_plot)
+app.form.graphLayout.setContentsMargins(0, 0, 0, 0)
+
 try:
     os.mkdir("graphs/")
 except OSError:
