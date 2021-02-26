@@ -174,6 +174,7 @@ class DataObject:
     def createGraph(self):
         global GraphCount
 
+
         plt.figure(GraphCount)
 
         widgetList = []
@@ -233,5 +234,7 @@ class DataObject:
 
             plotWidget = FigureCanvas(plt.gcf())
             widgetList.append(plotWidget)
+
+
             plt.savefig('graphs/' + self.name + "_" + classifier.name + '.png', bbox_inches='tight')
         return widgetList

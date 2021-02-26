@@ -1,8 +1,14 @@
+import sys
+
 import PyQt5
 from PyQt5 import QtWidgets, uic, QtGui, QtCore
 import pandas as pd
 import numpy as np
 import glob
+
+from PyQt5.QtWidgets import QDialog, QApplication
+
+import menu
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -17,19 +23,25 @@ warnings.filterwarnings("ignore")
 
 
 
-app = QtWidgets.QApplication([])
+class AppWindow(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5'))
+        self.form = menu.Ui_Dialog()
+        self.form.setupUi(self)
 
-app.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5'))
+        self.show()
 
-form = uic.loadUi("menu.ui")
+Qapp = QApplication(sys.argv)
+app = AppWindow()
+app.show()
 
-form.show()
 DataList = {}
 
 currentFile = None
 
 def selectData(file):
-    form.placeHolderBar.hide()
+    app.form.placeHolderBar.hide()
 
     global currentFile
 
@@ -42,17 +54,17 @@ def selectData(file):
         DataList[item].table.hide()
         DataList[item].progressBar.hide()
 
-    form.groupBox.setTitle(file.name)
+    app.form.groupBox.setTitle(file.name)
 
     currentFile = file
     file.updateClassifierStats()
     file.updateDimensionStat()
     file.updateRowStat()
 
-    form.tableWidget.hide()
+    app.form.tableWidget.hide()
     file.table.show()
     file.progressBar.show()
-    form.tabWidget_2.setCurrentIndex(file.tabIndex)
+    app.form.tabWidget_2.setCurrentIndex(file.tabIndex)
 
 def addFile(csv, filename, showError):
     if filename in DataList:
@@ -64,10 +76,10 @@ def addFile(csv, filename, showError):
             msg.exec_()
         return
 
-    file = fileObject.FileObject(csv, filename, form)
+    file = fileObject.FileObject(csv, filename, app.form)
 
     DataList[filename] = file
-    form.listWidget.addItem(filename)
+    app.form.listWidget.addItem(filename)
 
     return file
 
@@ -120,7 +132,7 @@ def loadAllFiles():
         return
 
     deselectList()
-    selectItem(form.listWidget.item(form.listWidget.count() - 1))
+    selectItem(app.form.listWidget.item(app.form.listWidget.count() - 1))
     selectData(last)
 
 
@@ -162,40 +174,43 @@ def saveAllSettings():
     for filename in DataList:
         DataList[filename].saveSettings()
 
-form.loadAllFiles.clicked.connect(loadAllFiles)
-form.uploadButton.clicked.connect(loadFile)
-form.enumerateAll.clicked.connect(toggleAllEnumerate)
-form.saveSettings.clicked.connect(saveSettings)
-form.loadSettings.clicked.connect(loadSettings)
-form.saveAllSettings.clicked.connect(saveAllSettings)
-form.loadAllSettings.clicked.connect(loadAllSettings)
-form.resetAllSettings.clicked.connect(resetAllSettings)
-form.resetSettings.clicked.connect(resetSettings)
+app.form.loadAllFiles.clicked.connect(loadAllFiles)
+app.form.uploadButton.clicked.connect(loadFile)
+app.form.enumerateAll.clicked.connect(toggleAllEnumerate)
+app.form.saveSettings.clicked.connect(saveSettings)
+app.form.loadSettings.clicked.connect(loadSettings)
+app.form.saveAllSettings.clicked.connect(saveAllSettings)
+app.form.loadAllSettings.clicked.connect(loadAllSettings)
+app.form.resetAllSettings.clicked.connect(resetAllSettings)
+app.form.resetSettings.clicked.connect(resetSettings)
 
-form.executeReduction.clicked.connect(executeReduction)
+app.form.executeReduction.clicked.connect(executeReduction)
 
 def setTab():
-    currentFile.tabIndex = form.tabWidget_2.currentIndex()
+    currentFile.tabIndex = app.form.tabWidget_2.currentIndex()
 
-form.tabWidget_2.currentChanged.connect(setTab)
+app.form.tabWidget_2.currentChanged.connect(setTab)
 
 
 
 def deselectList():
-    for i in range(form.listWidget.count()):
-        form.listWidget.item(i).setBackground(QBrush(Qt.transparent, Qt.SolidPattern))
-        form.listWidget.item(i).setForeground(QBrush(Qt.white, Qt.SolidPattern))
+    for i in range(app.form.listWidget.count()):
+        app.form.listWidget.item(i).setBackground(QBrush(Qt.transparent, Qt.SolidPattern))
+        app.form.listWidget.item(i).setForeground(QBrush(Qt.white, Qt.SolidPattern))
 
 def selectionChanged():
-    selectData(DataList[form.listWidget.selectedItems()[0].text()])
+    selectData(DataList[app.form.listWidget.selectedItems()[0].text()])
     deselectList()
-    selectItem(form.listWidget.selectedItems()[0])
+    selectItem(app.form.listWidget.selectedItems()[0])
 
 def selectItem(item):
     item.setForeground(QBrush(Qt.white, Qt.SolidPattern))
     item.setBackground(QBrush(QColor(20, 100, 160), Qt.SolidPattern))
 
 
-form.listWidget.itemSelectionChanged.connect(selectionChanged)
-
+app.form.listWidget.itemSelectionChanged.connect(selectionChanged)
+try:
+    os.mkdir("graphs/")
+except OSError:
+    pass
 app.exec()

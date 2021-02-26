@@ -120,7 +120,7 @@ class FileObject:
         lay = QtWidgets.QVBoxLayout(self.form.content_plot)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.addWidget(plotWidget)
-        lay.addWidget(NavigationToolbar(plotWidget, self.form))
+        lay.addWidget(NavigationToolbar(plotWidget, None))
         plotWidget.show()
 
     def executeReduction(self):

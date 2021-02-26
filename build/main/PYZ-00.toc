@@ -1,0 +1,2 @@
+('C:\\Users\\Haydn\\PycharmProjects\\dimensionality-reduction-ui\\build\\main\\PYZ-00.pyz',
+ [])
