@@ -63,10 +63,10 @@ class Worker(QRunnable):
             self.signals.finished.emit()  # Done
 
 class FileObject:
-    def __init__(self, csv, name, form):
+    def __init__(self, csv, name, app):
         self.name = name
         self.csv = csv
-        self.form = form
+        self.app = app
         self.threadpool = QThreadPool()
         self.classifier = None
         self.disabled = []
@@ -92,23 +92,25 @@ class FileObject:
 
         self.setupHeader()
 
-        self.graphList = QtWidgets.QListWidget(self.form.tab_4)
+        self.graphList = QtWidgets.QListWidget(self.app.form.tab_4)
         self.graphList.setMaximumSize(QtCore.QSize(150, 16777215))
         self.graphList.setObjectName("graphList")
-        self.form.gridLayout_8.addWidget(self.graphList, 0, 0, 1, 1)
+        self.app.form.gridLayout_8.addWidget(self.graphList, 0, 0, 1, 1)
         self.graphList.itemSelectionChanged.connect(self.selectionChanged)
 
-        self.progressBar = QtWidgets.QProgressBar(self.form.groupBox)
+        self.progressBar = QtWidgets.QProgressBar(self.app.form.groupBox)
         self.progressBar.setMaximumSize(QtCore.QSize(16777215, 10))
         self.progressBar.setProperty("value", 0)
         self.progressBar.setTextVisible(False)
         self.progressBar.setInvertedAppearance(False)
         self.progressBar.setObjectName("progressBar")
         self.progressBar.hide()
-        self.form.gridLayout_5.addWidget(self.progressBar, 8, 0, 1, 1)
+        self.app.form.gridLayout_5.addWidget(self.progressBar, 9, 0, 1, 1)
+        self.do = None
 
-
-        self.form.gridLayout_3.addWidget(self.table, 0, 0, 1, 1)
+        self.totalIterations = 0
+        self.iterationCount = 0
+        self.app.form.gridLayout_3.addWidget(self.table, 0, 0, 1, 1)
 
     def selectionChanged(self):
         self.hideGraphs()
@@ -141,20 +143,25 @@ class FileObject:
 
     def loadGraphs(self):
 
+        if self.do is None:
+            return
+
+        if len(self.do.reducedDataSets) <= 0:
+            return
+
         self.graphWidgets = self.do.createGraph()
         self.graphList.addItems([a.name for a in classification.classificationAlgorithms])
-
-
-
 
         last = None
         for graph in self.graphWidgets:
             self.graphWidgets[graph].hide()
-            self.form.graphLayout.addWidget(self.graphWidgets[graph])
+            self.app.form.graphLayout.addWidget(self.graphWidgets[graph])
             toolbar = NavigationToolbar(self.graphWidgets[graph], None)
             toolbar.hide()
             self.graphToolBars[graph] = toolbar
-            self.form.graphLayout.addWidget(toolbar)
+            self.app.form.graphLayout.addWidget(toolbar)
+            self.iterationCount += 1
+            self.progressBar.setValue((self.iterationCount / self.totalIterations) * 100)
             last = graph
 
         if last is None:
@@ -165,6 +172,12 @@ class FileObject:
         self.graphToolBars[last].show()
 
     def executeReduction(self):
+
+        canRun = False
+        for method in reduction.reductionAlgorithms:
+            if method.enabled:
+                canRun = True
+                break
 
         csv = self.csv.copy(deep=True)
 
@@ -186,21 +199,24 @@ class FileObject:
                                                           self.do.yTestData)
             self.do.addClassifierScore(classifier.name, temp_score, elapsedTime)
 
-        totalIterations =  self.do.maxDimensionalReduction * len(reduction.reductionAlgorithms) * len(classification.classificationAlgorithms)
-        iterationCount = 0
+
+        self.totalIterations =  (self.do.maxDimensionalReduction * len([ra for ra in reduction.reductionAlgorithms if ra.enabled]) * len(classification.classificationAlgorithms)) + len(classification.classificationAlgorithms)
+        self.iterationCount = 0
         self.progressBar.setValue(0)
 
         for method in reduction.reductionAlgorithms:
+            if not method.enabled:
+                continue
 
-            dataset =  self.do.newReducedDataSet(method.name)
+            dataset = self.do.newReducedDataSet(method.name)
             for dimension in range( self.do.maxDimensionalReduction, 0, -1):
 
                 if method.capByClasses and dimension >  self.do.classes - 1:
                     reducedData = dataset.addReducedData([], [], [], dimension, 0)
                     for classifier in classification.classificationAlgorithms:
                         reducedData.addClassifierScore(classifier.name, 0, 0)
-                        iterationCount+=1
-                        self.progressBar.setValue((iterationCount / totalIterations) * 100)
+                        self.iterationCount+=1
+                        self.progressBar.setValue((self.iterationCount / self.totalIterations) * 100)
 
                     continue
 
@@ -211,12 +227,8 @@ class FileObject:
                                                                  dataset.yTrainingData,
                                                                  dataset.yTestData)
                     reducedData.addClassifierScore(classifier.name, temp_score, elapsedTime)
-                    iterationCount += 1
-                    self.progressBar.setValue((iterationCount / totalIterations) * 100)
-
-                print('.', end='')
-            print("")
-        print(iterationCount, totalIterations)
+                    self.iterationCount += 1
+                    self.progressBar.setValue((self.iterationCount / self.totalIterations) * 100)
 
 
     def clearSettings(self):
@@ -240,8 +252,8 @@ class FileObject:
 
         for box in self.classifierBoxes:
             box.setChecked(False)
-        self.form.sender().setChecked(True)
-        self.classifier = int(self.form.sender().objectName())
+        self.app.sender().setChecked(True)
+        self.classifier = int(self.app.sender().objectName())
         self.updateClassifierStats()
         print(self.classifier)
 
@@ -250,20 +262,20 @@ class FileObject:
             return
 
         self.classes = self.csv[self.csv.columns[self.classifier]].nunique()
-        self.form.classificationValue.setText(str(self.classes))
+        self.app.form.classificationValue.setText(str(self.classes))
 
     def updateDimensionStat(self):
         self.dimensions = len(self.csv.columns) - (len(self.disabled))
-        self.form.dimensionValue.setText(str(self.dimensions))
+        self.app.form.dimensionValue.setText(str(self.dimensions))
 
     def updateRowStat(self):
         self.rows = len(self.csv.index)
-        self.form.rowValue.setText(str(self.rows))
+        self.app.form.rowValue.setText(str(self.rows))
 
 
     def setDisabled(self):
 
-        id = int(self.form.sender().objectName())
+        id = int(self.app.sender().objectName())
 
         if id in self.disabled:
             self.disabled.remove(id)
@@ -274,7 +286,7 @@ class FileObject:
         self.updateDimensionStat()
 
     def setEnumerate(self):
-        id = int(self.form.sender().objectName())
+        id = int(self.app.sender().objectName())
 
         if id in self.enumerate:
             self.enumerate.remove(id)

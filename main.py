@@ -5,10 +5,12 @@ from PyQt5 import QtWidgets, uic, QtGui, QtCore
 import pandas as pd
 import numpy as np
 import glob
+import reduction, classification, data
 
 from PyQt5.QtWidgets import QDialog, QApplication
 
 import menu
+import matplotlib.pylab as plt
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -23,12 +25,42 @@ warnings.filterwarnings("ignore")
 
 currentTab = 0
 
+DataList = {}
+
+currentFile = None
+
+
+def ExportData():
+    print("test")
+
+    for dl in DataList:
+        for index in range(len(DataList[dl].graphWidgets)):
+            DataList[dl].graphWidgets[list(DataList[dl].graphWidgets)[index]].figure.savefig('graphs/' + DataList[dl].name + "_" + classification.classificationAlgorithms[index].name + '.png', bbox_inches='tight')
+        if DataList[dl].do is not None:
+            DataList[dl].do.createSpreadSheet()
+
+    data.workbook.close()
+
+
 class AppWindow(QDialog):
     def __init__(self):
         super().__init__()
         self.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5'))
         self.form = menu.Ui_Dialog()
         self.form.setupUi(self)
+        button = QtWidgets.QToolButton()
+        button.setStyleSheet("QToolButton::hover"
+                             "{"
+                             "background-color : #3c596990;"
+                             "}"
+                             "QToolButton"
+                             "{"
+                             "border :1.5px solid ;"
+                             "border-color: #3c5969;"
+                             "}")
+        button.setText("Export Graphs and Data")
+        button.clicked.connect(ExportData)
+        self.form.tabWidget_2.setCornerWidget(button)
 
         self.show()
 
@@ -36,9 +68,6 @@ Qapp = QApplication(sys.argv)
 app = AppWindow()
 app.show()
 
-DataList = {}
-
-currentFile = None
 
 def selectData(file):
     app.form.placeHolderBar.hide()
@@ -85,7 +114,7 @@ def addFile(csv, filename, showError):
             msg.exec_()
         return
 
-    file = fileObject.FileObject(csv, filename, app.form)
+    file = fileObject.FileObject(csv, filename, app)
 
     DataList[filename] = file
     app.form.listWidget.addItem(filename)
@@ -205,7 +234,7 @@ def setTab():
     currentTab = currentFile.tabIndex
 
 app.form.tabWidget_2.currentChanged.connect(setTab)
-
+_translate = QtCore.QCoreApplication.translate
 
 
 def deselectList():
@@ -227,6 +256,19 @@ app.form.listWidget.itemSelectionChanged.connect(selectionChanged)
 
 app.form.graphLayout = QtWidgets.QVBoxLayout(app.form.content_plot)
 app.form.graphLayout.setContentsMargins(0, 0, 0, 0)
+
+def selectReduction(value):
+    checkbox = app.sender()
+
+    reduction.reductionAlgorithms[int(checkbox.objectName())].enabled = value
+
+for i in range(len(reduction.reductionAlgorithms)):
+    reductionBox = QtWidgets.QCheckBox(app.form.scrollAreaWidgetContents)
+    reductionBox.setObjectName(str(i))
+    reductionBox.setText(_translate("Dialog", reduction.reductionAlgorithms[i].name))
+    reductionBox.setChecked(reduction.reductionAlgorithms[i].enabled)
+    reductionBox.clicked.connect(selectReduction)
+    app.form.verticalLayout_5.addWidget(reductionBox)
 
 try:
     os.mkdir("graphs/")

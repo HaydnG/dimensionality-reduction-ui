@@ -20,6 +20,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 
 if os.path.exists("ReductionData.xlsx"):
   os.remove("ReductionData.xlsx")
+
 workbook = xlsxwriter.Workbook('ReductionData.xlsx')
 
 np.set_printoptions(precision=4, suppress=True)
@@ -101,7 +102,7 @@ class DataObject:
         if self.maxDimensionalReduction > 26:
             self.maxDimensionalReduction = 26
 
-        self.y = data['Class identifier']
+        self.y = data[data.columns[classifierIndex]]
         self.classes = self.y.nunique()
         self.yTrainingData = None
         self.yTestData = None
@@ -186,9 +187,12 @@ class DataObject:
                 scores = [ds.classifierScore[classifier.name] for ds in datasets.reducedData]
                 scoreData.append(scores)
 
-                dimensions = [ds.dimension for ds in datasets.reducedData]
 
-            df = pd.DataFrame(np.c_[scoreData[0], scoreData[1], scoreData[2]], index=np.arange(0, self.maxDimensionalReduction, 1).tolist(),
+            dimensions = [ds.dimension for ds in self.reducedDataSets[0].reducedData]
+            if len(scoreData) <= 0:
+                continue
+
+            df = pd.DataFrame(np.column_stack(scoreData), index=np.arange(0, self.maxDimensionalReduction, 1).tolist(),
                               columns=[rds.name for rds in self.reducedDataSets])
 
             ax = df.plot.bar()
@@ -196,7 +200,7 @@ class DataObject:
             lines, labels = ax.get_legend_handles_labels()
 
             plt.legend(lines, labels, title='Reduction Algorithm',
-                       bbox_to_anchor=(0, -0.3), loc="lower left",
+                       bbox_to_anchor=(-0.3, -0.2, 0.6, 0.1), loc=1,
                        ncol=2, borderaxespad=0.)
             plt.subplots_adjust(wspace=2)
             plt.title(
@@ -221,11 +225,12 @@ class DataObject:
 
             ax2.legend(handles=[Line2D([0], [0], marker='o', color='black', label='Reduction Time',
                                       markerfacecolor='red', markersize=10)],
-                       bbox_to_anchor=(1, -0.3),title='Execution Time (ms)', loc="lower right",
+                       bbox_to_anchor=(1, -0.1,0, 0),title='Execution Time (ms)', loc=1,
                        ncol=1, borderaxespad=0.)
 
 
             plt.ylabel("Algorithm execution time (ms) (line)")
+            plt.tight_layout()
             ax2.set_ylim(bottom=0)
 
 
@@ -233,8 +238,8 @@ class DataObject:
             GraphCount += 1
 
             plotWidget = FigureCanvas(plt.gcf())
+
             widgetList[classifier.name] = plotWidget
 
-
-            plt.savefig('graphs/' + self.name + "_" + classifier.name + '.png', bbox_inches='tight')
+            #plt.savefig('graphs/' + self.name + "_" + classifier.name + '.png', bbox_inches='tight')
         return widgetList

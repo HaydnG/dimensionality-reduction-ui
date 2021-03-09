@@ -15,6 +15,7 @@ class ReductionMethod:
         self.name = name
         self.method = method
         self.capByClasses = capByClasses
+        self.enabled = True
 
     def execute(self, dimension, x, y, dataset):
         x = x.values

@@ -7,13 +7,25 @@
     <x>0</x>
     <y>0</y>
     <width>1064</width>
-    <height>565</height>
+    <height>574</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dimensionality Reduction UI</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
+   <property name="leftMargin">
+    <number>1</number>
+   </property>
+   <property name="topMargin">
+    <number>1</number>
+   </property>
+   <property name="rightMargin">
+    <number>1</number>
+   </property>
+   <property name="bottomMargin">
+    <number>1</number>
+   </property>
    <item row="0" column="1">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
@@ -27,6 +39,18 @@
        <string>Data</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
        <item row="0" column="1">
         <widget class="QTabWidget" name="tabWidget_2">
          <property name="currentIndex">
@@ -37,6 +61,18 @@
            <string>Settings</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_3">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
            <item row="0" column="0">
             <widget class="QTableWidget" name="tableWidget">
              <property name="minimumSize">
@@ -77,6 +113,66 @@
               <string>Data</string>
              </property>
              <layout class="QGridLayout" name="gridLayout_5">
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+              <item row="1" column="0">
+               <widget class="QPushButton" name="saveSettings">
+                <property name="text">
+                 <string>Save Settings To File</string>
+                </property>
+               </widget>
+              </item>
+              <item row="8" column="0">
+               <widget class="QPushButton" name="executeReduction">
+                <property name="text">
+                 <string>Execute Reduction Algorithms</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QPushButton" name="resetSettings">
+                <property name="text">
+                 <string>Reset Settings</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QPushButton" name="enumerateAll">
+                <property name="text">
+                 <string>Toggle Enumerate All</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <spacer name="verticalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="2" column="0">
+               <widget class="QPushButton" name="loadSettings">
+                <property name="text">
+                 <string>Load Settings From File</string>
+                </property>
+               </widget>
+              </item>
               <item row="4" column="0">
                <layout class="QVBoxLayout" name="verticalLayout_2">
                 <item>
@@ -152,20 +248,7 @@
                 </item>
                </layout>
               </item>
-              <item row="5" column="0">
-               <spacer name="verticalSpacer">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>40</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="8" column="0">
+              <item row="9" column="0">
                <widget class="QProgressBar" name="placeHolderBar">
                 <property name="maximumSize">
                  <size>
@@ -181,39 +264,22 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="0">
-               <widget class="QPushButton" name="saveSettings">
-                <property name="text">
-                 <string>Save Settings To File</string>
+              <item row="6" column="0">
+               <widget class="QScrollArea" name="scrollArea">
+                <property name="widgetResizable">
+                 <bool>true</bool>
                 </property>
-               </widget>
-              </item>
-              <item row="0" column="0">
-               <widget class="QPushButton" name="enumerateAll">
-                <property name="text">
-                 <string>Toggle Enumerate All</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0">
-               <widget class="QPushButton" name="loadSettings">
-                <property name="text">
-                 <string>Load Settings From File</string>
-                </property>
-               </widget>
-              </item>
-              <item row="3" column="0">
-               <widget class="QPushButton" name="resetSettings">
-                <property name="text">
-                 <string>Reset Settings</string>
-                </property>
-               </widget>
-              </item>
-              <item row="7" column="0">
-               <widget class="QPushButton" name="executeReduction">
-                <property name="text">
-                 <string>Execute Reduction Algorithms</string>
-                </property>
+                <widget class="QWidget" name="scrollAreaWidgetContents">
+                 <property name="geometry">
+                  <rect>
+                   <x>0</x>
+                   <y>0</y>
+                   <width>346</width>
+                   <height>145</height>
+                  </rect>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_5"/>
+                </widget>
                </widget>
               </item>
              </layout>
@@ -226,6 +292,18 @@
            <string>Visualisation</string>
           </attribute>
           <layout class="QGridLayout" name="gridLayout_8">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
            <item row="0" column="1">
             <widget class="QWidget" name="content_plot" native="true"/>
            </item>
