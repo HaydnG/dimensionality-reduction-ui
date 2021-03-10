@@ -29,17 +29,25 @@ DataList = {}
 
 currentFile = None
 
-
 def ExportData():
-    print("test")
+
+    data.openWorkBook()
+
+    if not os.path.exists("graphs/"):
+        os.mkdir("graphs/")
 
     for dl in DataList:
         for index in range(len(DataList[dl].graphWidgets)):
-            DataList[dl].graphWidgets[list(DataList[dl].graphWidgets)[index]].figure.savefig('graphs/' + DataList[dl].name + "_" + classification.classificationAlgorithms[index].name + '.png', bbox_inches='tight')
+            DataList[dl].graphWidgets[list(DataList[dl].graphWidgets)[index]].figure.savefig('graphs/' + DataList[dl].name + "_" + list(DataList[dl].graphWidgets)[index] + '.png', bbox_inches='tight')
         if DataList[dl].do is not None:
             DataList[dl].do.createSpreadSheet()
 
     data.workbook.close()
+    msg = QtWidgets.QMessageBox()
+    msg.setWindowTitle("Export Complete")
+    msg.setText("Graphs have been exported to the graphs folder.\n\n"
+                "ReductionData.xlsx exported to application path")
+    msg.exec_()
 
 
 class AppWindow(QDialog):
@@ -126,8 +134,6 @@ def readCSV(filename):
         csv = pd.read_csv(filename)
     except Exception as e:
         print(e)
-        print("failed to load file")
-
         msg = QtWidgets.QMessageBox()
         msg.setWindowTitle(filename + " - Error loading file")
         msg.setText(filename + " - Pandas Error: " + str(e))
@@ -202,8 +208,6 @@ def executeReduction():
     if currentFile is None:
         return
     currentFile.executeReductionInThread()
-    print("hi")
-
 def loadAllSettings():
     for filename in DataList:
         DataList[filename].loadSettings()

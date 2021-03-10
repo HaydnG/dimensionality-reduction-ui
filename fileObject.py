@@ -149,12 +149,21 @@ class FileObject:
         if len(self.do.reducedDataSets) <= 0:
             return
 
+        if len(self.graphWidgets) > 0:
+            for wid in self.graphWidgets:
+                self.graphWidgets[wid].hide()
+                self.graphWidgets[wid].deleteLater()
+
         self.graphWidgets = self.do.createGraph()
-        self.graphList.addItems([a.name for a in classification.classificationAlgorithms])
+        self.graphList.clear()
+        self.graphList.addItems([a for a in self.graphWidgets])
+
+
 
         last = None
         for graph in self.graphWidgets:
             self.graphWidgets[graph].hide()
+
             self.app.form.graphLayout.addWidget(self.graphWidgets[graph])
             toolbar = NavigationToolbar(self.graphWidgets[graph], None)
             toolbar.hide()
@@ -186,11 +195,16 @@ class FileObject:
         elif len(self.enumerate) > 0:
             csv = data.enumerate_data(csv, self.enumerate)
 
+
         for columnIndex in self.disabled:
             del csv[csv.columns[columnIndex]]
-
+            if columnIndex < self.classifier:
+                self.classifier = self.classifier -1
 
         self.do = data.DataObject(self.name, csv, self.classifier)
+
+
+
 
         self.do.xTrainingData,  self.do.xTestData,  self.do.yTrainingData,  self.do.yTestData = reduction.prepareData( self.do.x,  self.do.y)
         for classifier in classification.classificationAlgorithms:
@@ -211,7 +225,8 @@ class FileObject:
             dataset = self.do.newReducedDataSet(method.name)
             for dimension in range( self.do.maxDimensionalReduction, 0, -1):
 
-                if method.capByClasses and dimension >  self.do.classes - 1:
+
+                if method.capByClasses and dimension > self.do.classes - 1:
                     reducedData = dataset.addReducedData([], [], [], dimension, 0)
                     for classifier in classification.classificationAlgorithms:
                         reducedData.addClassifierScore(classifier.name, 0, 0)
