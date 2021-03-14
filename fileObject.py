@@ -1,7 +1,6 @@
 import sys
 import traceback
 
-from PyQt5 import QtWidgets, uic, QtGui, QtCore
 from PyQt5.QtCore import Qt, QThreadPool, QRunnable, pyqtSlot, QObject, pyqtSignal
 import json
 import os
@@ -13,9 +12,10 @@ from PyQt5 import QtCore, QtWidgets, uic
 import matplotlib
 matplotlib.use('QT5Agg')
 
-import matplotlib.pylab as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+
+DataList = {}
+currentFile = None
 
 class WorkerSignals(QObject):
     '''
@@ -90,6 +90,7 @@ class FileObject:
         self.table.setRowCount(0)
         self.table.setAlternatingRowColors(True)
 
+        self.Exception = None
         self.setupHeader()
 
         self.graphList = QtWidgets.QListWidget(self.app.form.tab_4)
@@ -105,6 +106,8 @@ class FileObject:
         self.progressBar.setInvertedAppearance(False)
         self.progressBar.setObjectName("progressBar")
         self.progressBar.hide()
+
+        self.allProgress = None
         self.app.form.gridLayout_5.addWidget(self.progressBar, 9, 0, 1, 1)
         self.do = None
 
@@ -132,6 +135,33 @@ class FileObject:
         self.graphWidgets[self.graphList.selectedItems()[0].text()].show()
         self.graphToolBars[self.graphList.selectedItems()[0].text()].show()
 
+    def executeReductionInModal(self, layout, next):
+
+        groupBox = QtWidgets.QVBoxLayout()
+
+
+        self.allProgress = QtWidgets.QProgressBar()
+        self.allProgress.setMaximumSize(QtCore.QSize(16777215, 10))
+        self.allProgress.setProperty("value", 0)
+        self.allProgress.setTextVisible(False)
+        self.allProgress.setInvertedAppearance(False)
+        self.allProgress.setObjectName("allProgress")
+        self.allProgress.show()
+
+        label = QtWidgets.QLabel(self.name)
+        label.setMinimumSize(100, 20)
+        label.setMaximumSize(100, 40)
+        groupBox.addWidget(label)
+        groupBox.addWidget(self.allProgress)
+        layout.addLayout(groupBox)
+
+
+        worker = Worker(self.executeReduction)
+
+        self.threadpool.start(worker)
+        worker.signals.finished.connect(next)
+
+
     def executeReductionInThread(self):
          worker = Worker(self.executeReduction)
 
@@ -144,6 +174,12 @@ class FileObject:
     def loadGraphs(self):
 
         if self.do is None:
+            if self.Exception is not None:
+                msg = QtWidgets.QMessageBox()
+                msg.setWindowTitle("Reduction/Classification Error")
+                msg.setText("Reduction/Classification Error: " + self.Exception)
+                msg.exec_()
+
             return
 
         if len(self.do.reducedDataSets) <= 0:
@@ -170,80 +206,101 @@ class FileObject:
             self.graphToolBars[graph] = toolbar
             self.app.form.graphLayout.addWidget(toolbar)
             self.iterationCount += 1
+            if self.allProgress is not None:
+                self.allProgress.setValue((self.iterationCount / self.totalIterations) * 100)
             self.progressBar.setValue((self.iterationCount / self.totalIterations) * 100)
             last = graph
 
         if last is None:
             return
 
+        if currentFile == self:
+            self.graphWidgets[last].show()
+            self.graphToolBars[last].show()
 
-        self.graphWidgets[last].show()
-        self.graphToolBars[last].show()
 
     def executeReduction(self):
 
-        canRun = False
-        for method in reduction.reductionAlgorithms:
-            if method.enabled:
-                canRun = True
-                break
+        try:
+            if self.classifier is None:
+                self.Exception = "No classifier has been set"
+                return
 
-        csv = self.csv.copy(deep=True)
+            canRun = False
+            for method in reduction.reductionAlgorithms:
+                if method.enabled:
+                    canRun = True
+                    break
 
-        if self.enumAll:
-            csv = data.enumerate_all(csv)
-        elif len(self.enumerate) > 0:
-            csv = data.enumerate_data(csv, self.enumerate)
+            csv = self.csv.copy(deep=True)
 
-
-        for columnIndex in self.disabled:
-            del csv[csv.columns[columnIndex]]
-            if columnIndex < self.classifier:
-                self.classifier = self.classifier -1
-
-        self.do = data.DataObject(self.name, csv, self.classifier)
+            if self.enumAll:
+                csv = data.enumerate_all(csv)
+            elif len(self.enumerate) > 0:
+                csv = data.enumerate_data(csv, self.enumerate)
 
 
+            for columnIndex in self.disabled:
+                del csv[csv.columns[columnIndex]]
+                if columnIndex < self.classifier:
+                    self.classifier = self.classifier -1
+
+            self.do = data.DataObject(self.name, csv, self.classifier)
 
 
-        self.do.xTrainingData,  self.do.xTestData,  self.do.yTrainingData,  self.do.yTestData = reduction.prepareData( self.do.x,  self.do.y)
-        for classifier in classification.classificationAlgorithms:
-            temp_score, elapsedTime = classifier.execute( self.do.xTrainingData,  self.do.xTestData,
-                                                          self.do.yTrainingData,
-                                                          self.do.yTestData)
-            self.do.addClassifierScore(classifier.name, temp_score, elapsedTime)
 
 
-        self.totalIterations =  (self.do.maxDimensionalReduction * len([ra for ra in reduction.reductionAlgorithms if ra.enabled]) * len(classification.classificationAlgorithms)) + len(classification.classificationAlgorithms)
-        self.iterationCount = 0
-        self.progressBar.setValue(0)
-
-        for method in reduction.reductionAlgorithms:
-            if not method.enabled:
-                continue
-
-            dataset = self.do.newReducedDataSet(method.name)
-            for dimension in range( self.do.maxDimensionalReduction, 0, -1):
+            self.do.xTrainingData,  self.do.xTestData,  self.do.yTrainingData,  self.do.yTestData = reduction.prepareData( self.do.x,  self.do.y)
+            for classifier in classification.classificationAlgorithms:
+                temp_score, elapsedTime = classifier.execute( self.do.xTrainingData,  self.do.xTestData,
+                                                              self.do.yTrainingData,
+                                                              self.do.yTestData)
+                self.do.addClassifierScore(classifier.name, temp_score, elapsedTime)
 
 
-                if method.capByClasses and dimension > self.do.classes - 1:
-                    reducedData = dataset.addReducedData([], [], [], dimension, 0)
-                    for classifier in classification.classificationAlgorithms:
-                        reducedData.addClassifierScore(classifier.name, 0, 0)
-                        self.iterationCount+=1
-                        self.progressBar.setValue((self.iterationCount / self.totalIterations) * 100)
+            self.totalIterations =  (self.do.maxDimensionalReduction * len([ra for ra in reduction.reductionAlgorithms if ra.enabled]) * len(classification.classificationAlgorithms)) + len(classification.classificationAlgorithms)
+            self.iterationCount = 0
+            self.progressBar.setValue(0)
+            if self.allProgress is not None:
+                self.allProgress.setValue(0)
 
+            for method in reduction.reductionAlgorithms:
+                if not method.enabled:
                     continue
 
-                reducedData = method.execute(dimension,  self.do.x,  self.do.y, dataset)
+                dataset = self.do.newReducedDataSet(method.name)
+                for dimension in range( self.do.maxDimensionalReduction, 0, -1):
 
-                for classifier in classification.classificationAlgorithms:
-                    temp_score, elapsedTime = classifier.execute(reducedData.xTrainingData, reducedData.xTestData,
-                                                                 dataset.yTrainingData,
-                                                                 dataset.yTestData)
-                    reducedData.addClassifierScore(classifier.name, temp_score, elapsedTime)
-                    self.iterationCount += 1
-                    self.progressBar.setValue((self.iterationCount / self.totalIterations) * 100)
+
+                    if method.capByClasses and dimension > self.do.classes - 1:
+                        reducedData = dataset.addReducedData([], [], [], dimension, 0)
+                        for classifier in classification.classificationAlgorithms:
+                            reducedData.addClassifierScore(classifier.name, 0, 0)
+                            self.iterationCount+=1
+                            if self.allProgress is not None:
+                                self.allProgress.setValue((self.iterationCount / self.totalIterations) * 100)
+                            self.progressBar.setValue((self.iterationCount / self.totalIterations) * 100)
+
+                        continue
+
+                    reducedData = method.execute(dimension,  self.do.x,  self.do.y, dataset)
+
+                    for classifier in classification.classificationAlgorithms:
+                        temp_score, elapsedTime = classifier.execute(reducedData.xTrainingData, reducedData.xTestData,
+                                                                     dataset.yTrainingData,
+                                                                     dataset.yTestData)
+                        reducedData.addClassifierScore(classifier.name, temp_score, elapsedTime)
+                        self.iterationCount += 1
+
+                        if self.allProgress is not None:
+                            self.allProgress.setValue((self.iterationCount / self.totalIterations) * 100)
+
+                        self.progressBar.setValue((self.iterationCount / self.totalIterations) * 100)
+        except Exception as e:
+            print(e)
+            self.Exception = str(e)
+            self.do = None
+            return None
 
 
     def clearSettings(self):

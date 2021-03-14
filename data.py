@@ -1,16 +1,11 @@
-import inline as inline
 import pandas as pd
 import numpy as np
 from sklearn import preprocessing
-import classification, reduction
-import matplotlib.patheffects as pe
-from matplotlib.legend_handler import HandlerLine2D, HandlerTuple
-from matplotlib.patches import Patch
+import classification
 from matplotlib.lines import Line2D
 import xlsxwriter
 import os
 
-from PyQt5 import QtCore, QtWidgets, uic
 import matplotlib
 matplotlib.use('TkAgg', force=True)
 
@@ -191,20 +186,21 @@ class DataObject:
 
         for classifier in classification.classificationAlgorithms:
             plt.figure(GraphCount)
-            scoreData = [[ds.classifierScore[classifier.name] for ds in rds.reducedData] for rds in self.reducedDataSets]
+            scoreData = [[0] + [ds.classifierScore[classifier.name] for ds in rds.reducedData] for rds in self.reducedDataSets]
+            scoreData.append([self.classifierScore[classifier.name]] + ([0] * (self.dimensions-1)))
 
-            dimensions = [ds.dimension for ds in self.reducedDataSets[0].reducedData]
+            dimensions = [self.dimensions] + [ds.dimension for ds in self.reducedDataSets[0].reducedData]
             if len(scoreData) <= 0:
                 continue
 
-            df = pd.DataFrame(np.column_stack(scoreData), index=np.arange(0, self.maxDimensionalReduction, 1).tolist(),
-                              columns=[rds.name for rds in self.reducedDataSets])
+            df = pd.DataFrame(np.column_stack(scoreData), index=np.arange(0, self.dimensions, 1).tolist(),
+                              columns=[rds.name for rds in self.reducedDataSets] + ["Without Reduction"])
 
-            ax = df.plot.bar()
+            ax = df.plot.bar(width=0.5)
             lines, labels = ax.get_legend_handles_labels()
 
             plt.legend(lines, labels, title='Reduction Algorithm',
-                       bbox_to_anchor=(-0.3, -0.2, 0.6, 0.1), loc=1,
+                       bbox_to_anchor=(-0.3, -0.2, 0.7, 0.1), loc=1,
                        ncol=2, borderaxespad=0.)
             plt.subplots_adjust(wspace=2)
             plt.title(
@@ -216,16 +212,16 @@ class DataObject:
             plt.xlabel("Number of dimensions")
             plt.margins(y=0)
 
-            plt.xticks(list(range(0, self.maxDimensionalReduction)), dimensions)
+            plt.xticks(list(range(0, self.dimensions)), dimensions)
 
             ax2 = ax.twinx()
             for datasets in self.reducedDataSets:
-                ax2.plot(list(range(0, self.maxDimensionalReduction)),
-                                [ds.elapsedTime for ds in datasets.reducedData],marker='o',markersize=4, lw=1, markeredgecolor='black')
+                ax2.plot(list(range(0, self.dimensions)),
+                                [None] + [ds.elapsedTime for ds in datasets.reducedData],marker='o',markersize=4, lw=1, markeredgecolor='black')
 
             ax2.legend(handles=[Line2D([0], [0], marker='o', color='black', label='Reduction Time',
                                       markerfacecolor='red', markersize=10)],
-                       bbox_to_anchor=(1, -0.1,0, 0),title='Execution Time (ms)', loc=1,
+                       bbox_to_anchor=(1, -0.1,0, 0),title='Reduction Time (ms)', loc=1,
                        ncol=1, borderaxespad=0.)
 
             plt.ylabel("Algorithm execution time (ms) (line)")
@@ -253,11 +249,14 @@ class DataObject:
                  range(len(rds.reducedData[len(rds.reducedData) - 2].xData) - 1) if self.y.values[index] == cl]
                 plots.append(plt.scatter(x,y))
 
-            plt.title(rds.name, loc='center')
+            plt.title(rds.name +  " 2nd Dimension Reduction Plotted", loc='center')
             plt.legend(plots, self.classList, title="Class",
                        bbox_to_anchor=(-0.3, -0.2, 0.6, 0.1), loc=1,
                        ncol=2, borderaxespad=0.)
+            plt.ylabel("Dimension 1")
+            plt.xlabel("Dimension 2")
             plt.tight_layout()
+
             plotWidget = FigureCanvas(plt.gcf())
             widgetList[rds.name + " - Reduction"] = plotWidget
             GraphCount += 1

@@ -1,20 +1,10 @@
 import sys
-
-import PyQt5
 from PyQt5 import QtWidgets, uic, QtGui, QtCore
 import pandas as pd
-import numpy as np
 import glob
-import reduction, classification, data
-
-from PyQt5.QtWidgets import QDialog, QApplication
-
+import reduction, data
+from PyQt5.QtWidgets import QDialog, QApplication, QFileDialog
 import menu
-import matplotlib.pylab as plt
-
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
-
 import fileObject
 import qdarkstyle
 import os
@@ -25,9 +15,6 @@ warnings.filterwarnings("ignore")
 
 currentTab = 0
 
-DataList = {}
-
-currentFile = None
 
 def ExportData():
 
@@ -36,11 +23,11 @@ def ExportData():
     if not os.path.exists("graphs/"):
         os.mkdir("graphs/")
 
-    for dl in DataList:
-        for index in range(len(DataList[dl].graphWidgets)):
-            DataList[dl].graphWidgets[list(DataList[dl].graphWidgets)[index]].figure.savefig('graphs/' + DataList[dl].name + "_" + list(DataList[dl].graphWidgets)[index] + '.png', bbox_inches='tight')
-        if DataList[dl].do is not None:
-            DataList[dl].do.createSpreadSheet()
+    for dl in fileObject.DataList:
+        for index in range(len(fileObject.DataList[dl].graphWidgets)):
+            fileObject.DataList[dl].graphWidgets[list(fileObject.DataList[dl].graphWidgets)[index]].figure.savefig('graphs/' + fileObject.DataList[dl].name + "_" + list(fileObject.DataList[dl].graphWidgets)[index] + '.png', bbox_inches='tight')
+        if fileObject.DataList[dl].do is not None:
+            fileObject.DataList[dl].do.createSpreadSheet()
 
     data.workbook.close()
     msg = QtWidgets.QMessageBox()
@@ -72,6 +59,17 @@ class AppWindow(QDialog):
 
         self.show()
 
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.accept()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        files = [u.toLocalFile() for u in event.mimeData().urls()]
+        for f in files:
+            processFile(f)
+
 Qapp = QApplication(sys.argv)
 app = AppWindow()
 app.show()
@@ -82,16 +80,11 @@ def selectData(file):
 
     global currentFile
 
-
-    if file.table.rowCount() < 1:
-       file.loadTable()
-       file.loadSettings()
-
-    for item in DataList:
-        DataList[item].table.hide()
-        DataList[item].progressBar.hide()
-        DataList[item].graphList.hide()
-        DataList[item].hideGraphs()
+    for item in fileObject.DataList:
+        fileObject.DataList[item].table.hide()
+        fileObject.DataList[item].progressBar.hide()
+        fileObject.DataList[item].graphList.hide()
+        fileObject.DataList[item].hideGraphs()
 
     app.form.groupBox.setTitle(file.name)
 
@@ -113,7 +106,7 @@ def selectData(file):
     #     app.form.tabWidget_2.setCurrentIndex(currentTab)
 
 def addFile(csv, filename, showError):
-    if filename in DataList:
+    if filename in fileObject.DataList:
         if showError:
 
             msg = QtWidgets.QMessageBox()
@@ -124,15 +117,24 @@ def addFile(csv, filename, showError):
 
     file = fileObject.FileObject(csv, filename, app)
 
-    DataList[filename] = file
+    file.loadTable()
+    file.loadSettings()
+
+    fileObject.DataList[filename] = file
     app.form.listWidget.addItem(filename)
 
     return file
 
 def readCSV(filename):
+    if os.path.isfile(filename) is False:
+        return
+
     try:
         csv = pd.read_csv(filename)
     except Exception as e:
+        if e == FileNotFoundError:
+            return
+
         print(e)
         msg = QtWidgets.QMessageBox()
         msg.setWindowTitle(filename + " - Error loading file")
@@ -142,15 +144,24 @@ def readCSV(filename):
     return csv
 
 def loadFile():
+    dlg = QFileDialog()
+    dlg.setFileMode(QFileDialog.AnyFile)
+    dlg.exec_()
 
-    a = QtWidgets.QFileDialog.getOpenFileName()
+    a = dlg.selectedFiles()
+    if len(a) <= 0:
+        return
 
-    csv = readCSV(a[0])
+    processFile(a[0])
+
+
+def processFile(url):
+    csv = readCSV(url)
     if csv is None:
         return
 
-    names = a[0].split("/")
-    filename = names[len(names)-1]
+    names = url.split("/")
+    filename = names[len(names) - 1]
 
     file = addFile(csv, filename, True)
 
@@ -161,6 +172,8 @@ def loadFile():
 
 def loadAllFiles():
     files = glob.glob("data/*.data")
+
+    files = files + (glob.glob("data/*.csv"))
 
     last = None
     for file in files:
@@ -196,25 +209,75 @@ def resetSettings():
     currentFile.clearSettings()
 
 def resetAllSettings():
-    for filename in DataList:
-        DataList[filename].clearSettings()
+    for filename in fileObject.DataList:
+        fileObject.DataList[filename].clearSettings()
 
 def loadSettings():
     if currentFile is None:
         return
     currentFile.loadSettings()
 
+counter = 0
+msg = None
+scroll = None
+layout = None
+
+def executeAllReduction():
+    global counter,  msg, scroll, layout
+
+    if len(fileObject.DataList) <= 0:
+        return
+
+    msg = QtWidgets.QDialog()
+    msg.setWindowModality(QtCore.Qt.ApplicationModal)
+
+    counter = 0
+    msg.setWindowTitle("Reduction")
+    msg.setWindowFlags(
+    QtCore.Qt.Window |
+    QtCore.Qt.CustomizeWindowHint |
+    QtCore.Qt.WindowTitleHint |
+    QtCore.Qt.WindowMinimizeButtonHint
+    )
+    msg.setMaximumSize(400, 9999)
+    msg.setMinimumSize(400, 100)
+    scroll = QtWidgets.QScrollArea()
+    layout = QtWidgets.QVBoxLayout(scroll)
+    scroll.setLayout(layout)
+
+    msg.setLayout(layout)
+    msg.setFixedSize(app.layout().sizeHint())
+
+    msg.show()
+    startExecution()
+
+def startExecution():
+    global counter
+    if counter != 0:
+        fileObject.DataList[list(fileObject.DataList)[counter-1]].loadGraphs()
+
+    if counter >= len(fileObject.DataList):
+        counter = 0
+        msg.hide()
+        return
+
+    fileObject.DataList[list(fileObject.DataList)[counter]].executeReductionInModal(layout, startExecution)
+    counter = counter + 1
+
+
+
+
 def executeReduction():
     if currentFile is None:
         return
     currentFile.executeReductionInThread()
 def loadAllSettings():
-    for filename in DataList:
-        DataList[filename].loadSettings()
+    for filename in fileObject.DataList:
+        fileObject.DataList[filename].loadSettings()
 
 def saveAllSettings():
-    for filename in DataList:
-        DataList[filename].saveSettings()
+    for filename in fileObject.DataList:
+        fileObject.DataList[filename].saveSettings()
 
 app.form.loadAllFiles.clicked.connect(loadAllFiles)
 app.form.uploadButton.clicked.connect(loadFile)
@@ -225,6 +288,7 @@ app.form.saveAllSettings.clicked.connect(saveAllSettings)
 app.form.loadAllSettings.clicked.connect(loadAllSettings)
 app.form.resetAllSettings.clicked.connect(resetAllSettings)
 app.form.resetSettings.clicked.connect(resetSettings)
+app.form.executeAllButton.clicked.connect(executeAllReduction)
 
 app.form.executeReduction.clicked.connect(executeReduction)
 
@@ -247,7 +311,7 @@ def deselectList():
         app.form.listWidget.item(i).setForeground(QBrush(Qt.white, Qt.SolidPattern))
 
 def selectionChanged():
-    selectData(DataList[app.form.listWidget.selectedItems()[0].text()])
+    selectData(fileObject.DataList[app.form.listWidget.selectedItems()[0].text()])
     deselectList()
     selectItem(app.form.listWidget.selectedItems()[0])
 
@@ -257,6 +321,7 @@ def selectItem(item):
 
 
 app.form.listWidget.itemSelectionChanged.connect(selectionChanged)
+app.setAcceptDrops(True)
 
 app.form.graphLayout = QtWidgets.QVBoxLayout(app.form.content_plot)
 app.form.graphLayout.setContentsMargins(0, 0, 0, 0)
