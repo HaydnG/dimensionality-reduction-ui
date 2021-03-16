@@ -221,9 +221,14 @@ counter = 0
 msg = None
 scroll = None
 layout = None
+running = False
 
 def executeAllReduction():
-    global counter,  msg, scroll, layout
+    global counter,  msg, scroll, layout,running
+
+    if running:
+        return
+
 
     if len(fileObject.DataList) <= 0:
         return
@@ -231,14 +236,15 @@ def executeAllReduction():
     msg = QtWidgets.QDialog()
     msg.setWindowModality(QtCore.Qt.ApplicationModal)
 
+
     counter = 0
     msg.setWindowTitle("Reduction")
-    msg.setWindowFlags(
-    QtCore.Qt.Window |
-    QtCore.Qt.CustomizeWindowHint |
-    QtCore.Qt.WindowTitleHint |
-    QtCore.Qt.WindowMinimizeButtonHint
-    )
+    #msg.setWindowFlags(
+    #QtCore.Qt.Window |
+    #QtCore.Qt.CustomizeWindowHint |
+    #QtCore.Qt.WindowTitleHint |
+    #QtCore.Qt.WindowMinimizeButtonHint
+    #)
     msg.setMaximumSize(400, 9999)
     msg.setMinimumSize(400, 100)
     scroll = QtWidgets.QScrollArea()
@@ -249,16 +255,18 @@ def executeAllReduction():
     msg.setFixedSize(app.layout().sizeHint())
 
     msg.show()
+    running = True
     startExecution()
 
 def startExecution():
-    global counter
+    global counter, running
     if counter != 0:
         fileObject.DataList[list(fileObject.DataList)[counter-1]].loadGraphs()
 
     if counter >= len(fileObject.DataList):
         counter = 0
         msg.hide()
+        running = False
         return
 
     fileObject.DataList[list(fileObject.DataList)[counter]].executeReductionInModal(layout, startExecution)
