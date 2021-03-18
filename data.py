@@ -139,6 +139,8 @@ class DataObject:
         worksheet.write(row, col + 3, "Classification Time")
         row += 1
         for classifier in classification.classificationAlgorithms:
+            if not classifier.enabled:
+                continue
             worksheet.write(row, col, classifier.name)
             worksheet.write(row, col + 1, self.dimensions)
             worksheet.write(row, col + 2, self.classifierScore[classifier.name])
@@ -149,6 +151,8 @@ class DataObject:
         row +=4
 
         for classifier in classification.classificationAlgorithms:
+            if not classifier.enabled:
+                continue
             col = 0
             worksheet.write(row, col, classifier.name + " Classifier")
             row += 1
@@ -185,6 +189,8 @@ class DataObject:
         widgetList = {}
 
         for classifier in classification.classificationAlgorithms:
+            if not classifier.enabled:
+                continue
             plt.figure(GraphCount)
             scoreData = [[0] + [ds.classifierScore[classifier.name] for ds in rds.reducedData] for rds in self.reducedDataSets]
             scoreData.append([self.classifierScore[classifier.name]] + ([0] * (self.dimensions-1)))

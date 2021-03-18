@@ -2,7 +2,7 @@ import sys
 from PyQt5 import QtWidgets, uic, QtGui, QtCore
 import pandas as pd
 import glob
-import reduction, data
+import reduction, data, classification
 from PyQt5.QtWidgets import QDialog, QApplication, QFileDialog
 import menu
 import fileObject
@@ -11,6 +11,7 @@ import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QBrush, QColor
 import warnings
+import re
 warnings.filterwarnings("ignore")
 
 currentTab = 0
@@ -334,11 +335,20 @@ app.setAcceptDrops(True)
 app.form.graphLayout = QtWidgets.QVBoxLayout(app.form.content_plot)
 app.form.graphLayout.setContentsMargins(0, 0, 0, 0)
 
+
+checkboxes2 = {}
+checkboxes1 = {}
+
 def selectReduction(value):
     checkbox = app.sender()
 
     reduction.reductionAlgorithms[int(checkbox.objectName())].enabled = value
 
+    checkboxes2[reduction.reductionAlgorithms[int(checkbox.objectName())].name].setChecked(value)
+    checkboxes1[reduction.reductionAlgorithms[int(checkbox.objectName())].name].setChecked(value)
+
+text = QtWidgets.QLabel("Reduction")
+app.form.verticalLayout_6.addWidget(text)
 for i in range(len(reduction.reductionAlgorithms)):
     reductionBox = QtWidgets.QCheckBox(app.form.scrollAreaWidgetContents)
     reductionBox.setObjectName(str(i))
@@ -346,7 +356,82 @@ for i in range(len(reduction.reductionAlgorithms)):
     reductionBox.setChecked(reduction.reductionAlgorithms[i].enabled)
     reductionBox.clicked.connect(selectReduction)
     app.form.verticalLayout_5.addWidget(reductionBox)
+    checkboxes1[reduction.reductionAlgorithms[i].name] = reductionBox
 
+    reductionBox = QtWidgets.QCheckBox(app.form.scrollAreaWidgetContents)
+    reductionBox.setObjectName(str(i))
+    reductionBox.setText(_translate("Dialog", reduction.reductionAlgorithms[i].name))
+    reductionBox.setChecked(reduction.reductionAlgorithms[i].enabled)
+    reductionBox.clicked.connect(selectReduction)
+    reductionBox.setMaximumSize(100, 30)
+    checkboxes2[reduction.reductionAlgorithms[i].name] = reductionBox
+    app.form.verticalLayout_6.addWidget(reductionBox)
+    app.form.verticalLayout_6.setSpacing(1)
+    app.form.verticalLayout_6.setAlignment(QtCore.Qt.AlignTop)
+
+def selectClassification(value):
+    checkbox = app.sender()
+
+    classification.classificationAlgorithms[int(checkbox.objectName())].enabled = value
+
+text = QtWidgets.QLabel("Classifiers")
+app.form.verticalLayout_7.addWidget(text)
+for i in range(len(classification.classificationAlgorithms)):
+    classifierBox = QtWidgets.QCheckBox(app.form.scrollAreaWidgetContents)
+    classifierBox.setObjectName(str(i))
+    classifierBox.setText(_translate("Dialog", classification.classificationAlgorithms[i].name))
+    classifierBox.setChecked(classification.classificationAlgorithms[i].enabled)
+    classifierBox.clicked.connect(selectClassification)
+    classifierBox.setMaximumSize(100, 30)
+    app.form.verticalLayout_7.addWidget(classifierBox)
+    app.form.verticalLayout_7.setSpacing(1)
+    app.form.verticalLayout_7.setAlignment(QtCore.Qt.AlignTop)
+
+
+def updateSeed():
+
+    input = re.sub('\D', '', app.form.selectionSeed.text())
+    if len(input) <= 0:
+        app.form.testData.setText("")
+        return
+
+    value = int(input)
+    reduction.selectionSeed = value
+    app.form.selectionSeed.setText(input)
+
+def updatePercent():
+
+    input = re.sub('[^0-9.]', '', app.form.testData.text())
+    if input == "0.":
+        reduction.testDataPercent = 0.
+        app.form.testData.setText("0.")
+        return
+    if len(input) <= 0:
+        app.form.testData.setText("")
+        return
+
+    try:
+        value = float(input)
+    except Exception:
+        reduction.testDataPercent = 0.33
+        app.form.testData.setText(str(0.33))
+        return
+
+    if value > 1:
+        newstr = input.split(".")[0]
+        div = float("1"+"".zfill(len(newstr)))
+        value = value / div
+        reduction.testDataPercent = value
+        app.form.testData.setText(str(value))
+        return
+
+    reduction.testDataPercent = value
+    app.form.testData.setText(input)
+
+app.form.selectionSeed.setText(str(reduction.selectionSeed))
+app.form.selectionSeed.textEdited.connect(updateSeed)
+app.form.testData.setText(str(reduction.testDataPercent))
+app.form.testData.textEdited.connect(updatePercent)
 try:
     os.mkdir("graphs/")
 except OSError:

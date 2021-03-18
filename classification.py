@@ -7,6 +7,7 @@ class ClassificationMethod:
     def __init__(self, name, method):
         self.name = name
         self.method = method
+        self.enabled = True
 
     def execute(self, xTrainingData, xTestData, yTrainingData, yTestData):
         start = timer()

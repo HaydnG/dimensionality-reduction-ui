@@ -258,7 +258,7 @@ class FileObject:
                 self.do.addClassifierScore(classifier.name, temp_score, elapsedTime)
 
 
-            self.totalIterations =  (self.do.maxDimensionalReduction * len([ra for ra in reduction.reductionAlgorithms if ra.enabled]) * len(classification.classificationAlgorithms)) + len(classification.classificationAlgorithms)
+            self.totalIterations =  (self.do.maxDimensionalReduction * len([ra for ra in reduction.reductionAlgorithms if ra.enabled]) * len([cla for cla in classification.classificationAlgorithms if cla.enabled])) + len([cla for cla in classification.classificationAlgorithms if cla.enabled])
             self.iterationCount = 0
             self.progressBar.setValue(0)
             if self.allProgress is not None:
@@ -275,6 +275,8 @@ class FileObject:
                     if method.capByClasses and dimension > self.do.classes - 1:
                         reducedData = dataset.addReducedData([], [], [], dimension, 0)
                         for classifier in classification.classificationAlgorithms:
+                            if not classifier.enabled:
+                                continue
                             reducedData.addClassifierScore(classifier.name, 0, 0)
                             self.iterationCount+=1
                             if self.allProgress is not None:
@@ -286,6 +288,8 @@ class FileObject:
                     reducedData = method.execute(dimension,  self.do.x,  self.do.y, dataset)
 
                     for classifier in classification.classificationAlgorithms:
+                        if not classifier.enabled:
+                            continue
                         temp_score, elapsedTime = classifier.execute(reducedData.xTrainingData, reducedData.xTestData,
                                                                      dataset.yTrainingData,
                                                                      dataset.yTestData)
