@@ -8,6 +8,14 @@ testDataPercent = 0.33
 selectionSeed = 3
 
 def prepareData(x, y):
+    seed = None
+    if selectionSeed != 0:
+        seed = selectionSeed
+
+    percent = 0.33
+    if testDataPercent > 0 and testDataPercent < 1:
+        percent = testDataPercent
+
     return train_test_split(x, y, test_size=testDataPercent,random_state=selectionSeed)  ##random_state=2 data seed
 
 class ReductionMethod:

@@ -10,6 +10,7 @@ class ClassificationMethod:
         self.enabled = True
 
     def execute(self, xTrainingData, xTestData, yTrainingData, yTestData):
+
         start = timer()
         yTestPredictedData = self.method(xTrainingData, xTestData, yTrainingData, yTestData)
         end = timer()

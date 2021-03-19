@@ -389,10 +389,9 @@ for i in range(len(classification.classificationAlgorithms)):
 
 
 def updateSeed():
-
     input = re.sub('\D', '', app.form.selectionSeed.text())
     if len(input) <= 0:
-        app.form.testData.setText("")
+        app.form.selectionSeed.setText("")
         return
 
     value = int(input)
@@ -400,7 +399,6 @@ def updateSeed():
     app.form.selectionSeed.setText(input)
 
 def updatePercent():
-
     input = re.sub('[^0-9.]', '', app.form.testData.text())
     if input == "0.":
         reduction.testDataPercent = 0.
