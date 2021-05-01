@@ -1,4 +1,6 @@
 import sys
+
+
 from PyQt5 import QtWidgets, uic, QtGui, QtCore
 import pandas as pd
 import glob
@@ -12,9 +14,15 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QBrush, QColor
 import warnings
 import re
+
 warnings.filterwarnings("ignore")
 
 currentTab = 0
+currentFile = None
+
+
+
+
 
 
 def ExportData():

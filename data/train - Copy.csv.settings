@@ -1,0 +1,1 @@
+{"enumerate": [4, 11], "disabled": [0, 8, 10, 3], "scale": [5, 9], "classifier": 1, "enumAll": false, "columnTitles": ["PassengerId", "Survived", "Pclass", "Name", "Sex", "Age", "SibSp", "Parch", "Ticket", "Fare", "Cabin", "Embarked"]}

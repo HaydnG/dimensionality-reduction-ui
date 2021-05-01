@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(1064, 575)
+        Dialog.resize(1118, 575)
         self.gridLayout_2 = QtWidgets.QGridLayout(Dialog)
         self.gridLayout_2.setContentsMargins(1, 1, 1, 1)
         self.gridLayout_2.setObjectName("gridLayout_2")
@@ -34,11 +34,13 @@ class Ui_Dialog(object):
         self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_3.setObjectName("gridLayout_3")
         self.tableWidget = QtWidgets.QTableWidget(self.tab_3)
-        self.tableWidget.setMinimumSize(QtCore.QSize(434, 0))
+        self.tableWidget.setMinimumSize(QtCore.QSize(540, 0))
         self.tableWidget.setMaximumSize(QtCore.QSize(434, 16777215))
         self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setColumnCount(0)
         self.tableWidget.setRowCount(0)
+        self.tableWidget.horizontalHeader().setDefaultSectionSize(80)
+        self.tableWidget.verticalHeader().setDefaultSectionSize(25)
         self.gridLayout_3.addWidget(self.tableWidget, 0, 0, 1, 1)
         self.groupBox = QtWidgets.QGroupBox(self.tab_3)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -231,7 +233,7 @@ class Ui_Dialog(object):
         self.gridLayout_2.addWidget(self.tabWidget, 0, 0, 1, 1)
 
         self.retranslateUi(Dialog)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         self.tabWidget_2.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 

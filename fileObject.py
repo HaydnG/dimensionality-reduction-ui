@@ -71,6 +71,7 @@ class FileObject:
         self.classifier = None
         self.disabled = []
         self.enumerate = []
+        self.scale = []
         self.graphWidgets = {}
         self.graphToolBars = {}
         self.tabIndex = 0
@@ -78,15 +79,16 @@ class FileObject:
         self.classifierBoxes = []
         self.disabledBoxes = []
         self.enumerateBoxes = []
+        self.scaleBoxes = []
 
         self.enumAll = False
 
         self.table = QtWidgets.QTableWidget()
 
-        self.table.setMinimumSize(QtCore.QSize(455, 0))
-        self.table.setMaximumSize(QtCore.QSize(455, 16777215))
+        self.table.setMinimumSize(QtCore.QSize(540, 0))
+        self.table.setMaximumSize(QtCore.QSize(540, 16777215))
         self.table.setObjectName("tableWidget")
-        self.table.setColumnCount(4)
+        self.table.setColumnCount(5)
         self.table.setRowCount(0)
         self.table.setAlternatingRowColors(True)
 
@@ -239,6 +241,10 @@ class FileObject:
             elif len(self.enumerate) > 0:
                 csv = data.enumerate_data(csv, self.enumerate)
 
+            if len(self.scale) > 0:
+                csv = data.scale_data(csv, self.scale)
+
+            self.disabled.sort(reverse=True)
 
             for columnIndex in self.disabled:
                 del csv[csv.columns[columnIndex]]
@@ -314,6 +320,8 @@ class FileObject:
             box.setChecked(False)
         for box in self.enumerateBoxes:
             box.setChecked(False)
+        for box in self.scaleBoxes:
+            box.setChecked(False)
         for box in self.classifierBoxes:
             box.setChecked(False)
         self.classifier = 0
@@ -371,6 +379,16 @@ class FileObject:
 
         print(self.enumerate)
 
+    def setScale(self):
+        id = int(self.app.sender().objectName())
+
+        if id in self.scale:
+            self.scale.remove(id)
+        else:
+            self.scale.append(id)
+
+        print(self.scale)
+
     def toggleAllEnumerate(self):
         self.enumAll = not self.enumAll
         self.setAllEnumerate(self.enumAll)
@@ -393,6 +411,7 @@ class FileObject:
         data = {}
         data['enumerate'] = self.enumerate
         data['disabled'] = self.disabled
+        data['scale'] = self.scale
         data['classifier'] = self.classifier
         data['enumAll'] = self.enumAll
         data['columnTitles'] = [self.table.item(y, 0).text() for y in range(0, self.table.rowCount())]
@@ -413,10 +432,22 @@ class FileObject:
                 self.enumerate = data['enumerate']
                 self.enumAll = data['enumAll']
 
+
+
                 if 'columnTitles' in data:
                     self.csv.columns = data['columnTitles']
 
                 self.updateTableColumns()
+
+                if 'scale' in data:
+                    self.scale = data['scale']
+                    for box in self.scaleBoxes:
+                        id = int(box.objectName())
+                        if id in data['scale']:
+                            box.setChecked(True)
+                        else:
+                            box.setChecked(False)
+
                 if self.enumAll:
                     self.setAllEnumerate(self.enumAll)
                 for box in self.enumerateBoxes:
@@ -458,10 +489,14 @@ class FileObject:
             enumerateWidget, checkbox = createCheckbox(str(a), self.setEnumerate)
             self.enumerateBoxes.append(checkbox)
 
+            scaleWidget, checkbox = createCheckbox(str(a), self.setScale)
+            self.scaleBoxes.append(checkbox)
+
             self.table.setItem(a, 0, QtWidgets.QTableWidgetItem(col))
             self.table.setCellWidget(a, 1, classifierWidget)
             self.table.setCellWidget(a, 2, enumerateWidget)
-            self.table.setCellWidget(a, 3, disableWidget)
+            self.table.setCellWidget(a, 3, scaleWidget)
+            self.table.setCellWidget(a, 4, disableWidget)
             a += 1
 
 
@@ -478,8 +513,11 @@ class FileObject:
         item.setText(_translate("Dialog", "Enumerate"))
         self.table.setHorizontalHeaderItem(2, item)
         item = QtWidgets.QTableWidgetItem()
-        item.setText(_translate("Dialog", "Disable"))
+        item.setText(_translate("Dialog", "Scale"))
         self.table.setHorizontalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        item.setText(_translate("Dialog", "Disable"))
+        self.table.setHorizontalHeaderItem(4, item)
         self.table.verticalHeader().setDefaultSectionSize(8)
         self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
         self.table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)

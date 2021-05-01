@@ -41,6 +41,17 @@ def enumerate(csv, label):
 
     return csv
 
+def scale(csv, label):
+    csv = csv.replace('?', np.nan)
+    csv = csv.dropna()
+
+    ss = preprocessing.StandardScaler()
+    data = np.array(csv[label]).reshape(-1, 1)
+
+    csv[label] = ss.fit_transform(data)
+
+    return csv
+
 # Takes in the data, and a list of labels to apply enumeration
 def enumerate_data(csv, labels):
     for l in labels:
@@ -51,6 +62,17 @@ def enumerate_data(csv, labels):
         csv = enumerate(csv, l)
 
     return csv
+
+def scale_data(csv, labels):
+    for l in labels:
+
+        if isinstance(l, int):
+            l = csv.columns[l]
+
+        csv = scale(csv, l)
+
+    return csv
+
 
 # Enumerates all columns in dataset
 def enumerate_all(csv):
@@ -125,7 +147,12 @@ class DataObject:
         return self.reducedDataSets[-1]
 
     def createSpreadSheet(self):
-        worksheet = workbook.add_worksheet(self.name)
+        if len(self.name) > 30:
+            name = self.name[0:30]
+        else:
+            name = self.name
+
+        worksheet = workbook.add_worksheet(name)
         worksheet.set_column(0, (len(self.reducedDataSets) * 2) + 1, 20)
 
         row = 0
@@ -264,7 +291,36 @@ class DataObject:
             plt.tight_layout()
 
             plotWidget = FigureCanvas(plt.gcf())
-            widgetList[rds.name + " - Reduction"] = plotWidget
+            widgetList[rds.name + " - (2) Reduction"] = plotWidget
+            GraphCount += 1
+
+        for rds in self.reducedDataSets:
+            if len(rds.reducedData[len(rds.reducedData)-3].xData) <= 0:
+                continue
+
+            fig = plt.figure(GraphCount)
+            ax = fig.add_subplot(projection='3d')
+            plots = []
+            for cl in self.classList:
+
+                x = [rds.reducedData[len(rds.reducedData)-3].xData[index][0] for index in range(len(rds.reducedData[len(rds.reducedData)-3].xData)-1) if self.y.values[index] == cl]
+                y = [rds.reducedData[len(rds.reducedData) - 3].xData[index][1] for index in
+                 range(len(rds.reducedData[len(rds.reducedData) - 3].xData) - 1) if self.y.values[index] == cl]
+                z = [rds.reducedData[len(rds.reducedData) - 3].xData[index][2] for index in
+                     range(len(rds.reducedData[len(rds.reducedData) - 3].xData) - 1) if self.y.values[index] == cl]
+                plots.append(ax.scatter(x,y,z))
+
+            plt.title(rds.name +  " 3nd Dimension Reduction Plotted", loc='center')
+            plt.legend(plots, self.classList, title="Class",
+                       bbox_to_anchor=(-0.3, -0.2, 0.6, 0.1), loc=1,
+                       ncol=2, borderaxespad=0.)
+            ax.set_ylabel("Dimension 1")
+            ax.set_xlabel("Dimension 2")
+            ax.set_zlabel("Dimension 3")
+            plt.tight_layout()
+
+            plotWidget = FigureCanvas(plt.gcf())
+            widgetList[rds.name + " - (3) Reduction"] = plotWidget
             GraphCount += 1
 
 

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1064</width>
+    <width>1118</width>
     <height>575</height>
    </rect>
   </property>
@@ -29,7 +29,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab">
       <property name="layoutDirection">
@@ -77,7 +77,7 @@
             <widget class="QTableWidget" name="tableWidget">
              <property name="minimumSize">
               <size>
-               <width>434</width>
+               <width>540</width>
                <height>0</height>
               </size>
              </property>
@@ -87,6 +87,12 @@
                <height>16777215</height>
               </size>
              </property>
+             <attribute name="horizontalHeaderDefaultSectionSize">
+              <number>80</number>
+             </attribute>
+             <attribute name="verticalHeaderDefaultSectionSize">
+              <number>25</number>
+             </attribute>
             </widget>
            </item>
            <item row="0" column="1">
