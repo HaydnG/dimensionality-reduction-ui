@@ -4,6 +4,9 @@ A user interface for processing csv files and conducting dimensionality reductio
 
 Run `pip install -r requirements.txt` to install all the dependencies 
 
+<img src="./screenshots/app.png" width="100%"> 
+<img src="./screenshots/app2.png" width="100%"> 
+<img src="./screenshots/app3.png" width="100%"> 
 
 ## Building
 
